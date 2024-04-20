@@ -1,15 +1,17 @@
 import { useEffect, useState, useRef } from "react";
-import "./App.css";
+import 'react-toastify/dist/ReactToastify.css';
 import Header from "./components/Header";
 import ContactList from "./components/ContactList";
 import {
   getContacts,
   saveContact,
-  updateContact,
   updatePhoto,
+  deleteContact
 } from "./api/ContactService";
 import { Routes, Route, Navigate } from "react-router-dom";
-import ContactDetail from "./components/ ContactDetail";
+import ContactDetail from "./components/ContactDetail";
+import { toastError } from "./api/ToastService";
+import { ToastContainer } from "react-toastify";
 
 function App() {
   const modalRef = useRef();
@@ -23,10 +25,10 @@ function App() {
     phone: "",
     address: "",
     title: "",
-    status: "",
+    status: ""
   });
 
-  const getAllContacts = async (page = 0, size = 10) => {
+  const getAllContacts = async (page = 0, size = 1) => {
     try {
       setCurrentPage(page);
       const { data } = await getContacts(page, size);
@@ -34,6 +36,7 @@ function App() {
       console.log(data);
     } catch (error) {
       console.log(error);
+      toastError(error.message);
     }
   };
 
@@ -50,30 +53,43 @@ function App() {
       formData.append("id", data.id);
       const { data: photoUrl } = await updatePhoto(formData);
       toggleModal(false);
-      console.log(photoUrl);
       setFile(undefined);
       fileRef.current.value = null;
       setValues({
+        id: "",
         name: "",
         email: "",
         phone: "",
         address: "",
         title: "",
-        status: "",
+        status: ""
       });
       getAllContacts();
     } catch (error) {
       console.log(error);
+      toastError(error.message);
     }
   };
 
-  const updateContact = async () => {};
+  const handleDeletedContact = async () => {
+    await getAllContacts();
+  }
+
+  const updateContact = async (contact) => {
+    try {
+      const { data } = await saveContact(contact);
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const updateImage = async (formData) => {
     try {
       const { data: photoUrl } = await updatePhoto(formData);
     } catch (error) {
       console.log(error);
+      toastError(error.message);
     }
   };
 
@@ -107,6 +123,7 @@ function App() {
                 <ContactDetail
                   updateContact={updateContact}
                   updateImage={updateImage}
+                  onContactDeleted={handleDeletedContact}
                 />
               }
             />
@@ -210,7 +227,7 @@ function App() {
           </form>
         </div>
       </dialog>
-      {/* <ToastContainer /> */}
+      <ToastContainer />
     </>
   );
 }
